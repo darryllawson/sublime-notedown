@@ -1,0 +1,17 @@
+[
+    {
+        "caption": "Notedown: Open Link",
+        "command": "notedown_open_link"
+    },
+    {
+        "caption": "Notedown: Lint",
+        "command": "notedown_lint"
+    },
+    {
+        "caption": "Notedown: Edit User Settings",
+        "command": "open_file", "args":
+        {
+            "file": "${packages}/User/Notedown.sublime-settings"
+        }
+    }
+]

@@ -1,0 +1,24 @@
+{
+	"folders":
+	[
+		{
+			"path": "."
+		},
+	],
+    "build_systems":
+    [
+        {
+            "name": "Notedown - Install",
+            "file_patterns": ["notedown.py"],
+            "quiet": true,
+            "cmd": ["python3", "-u", "$project_path/scripts/install.py"],
+        },
+        {
+            "name": "Notedown - Test",
+            "file_patterns": ["test_notedown.py"],
+            "quiet": true,
+            "cmd": ["python3", "-u", "$project_path/test_notedown.py"],
+            "file_regex": "^\\s*File \"(.+?)\", line ([0-9]*)"
+        }
+    ]
+}
