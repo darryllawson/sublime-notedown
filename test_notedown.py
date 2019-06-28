@@ -119,13 +119,23 @@ class TestFindingNotes(NotedownTestCase):
 
     def test_notes_dict(self):
         notes = notedown._find_notes(self.view_1)
-        self.assertEqual(notes.keys(), {'note one', 'note two', 'note three',
-                                        'alt one', 'alt two'})
+        self.assertEqual(notes.keys(), {
+            'note one',
+            'note two (alt one)',
+            'note two',
+            'alt one',
+            'note three (alt two, alt one)',
+            'note three',
+            'alt two'})
         self.assertEqual(notes['note one'], [('Note one', self.note_1)])
+        self.assertEqual(notes['note two (alt one)'],
+                         [('Note two (Alt one)', self.note_2)])
         self.assertEqual(notes['note two'], [('Note two', self.note_2)])
-        self.assertEqual(notes['note three'], [('Note three', self.note_3)])
         self.assertEqual(notes['alt one'], [('Alt one', self.note_2),
                                             ('ALT one', self.note_3)])
+        self.assertEqual(notes['note three (alt two, alt one)'],
+                         [('Note three (Alt two, ALT one)', self.note_3)])
+        self.assertEqual(notes['note three'], [('Note three', self.note_3)])
         self.assertEqual(notes['alt two'], [('Alt two', self.note_3)])
 
     def test_cache(self):

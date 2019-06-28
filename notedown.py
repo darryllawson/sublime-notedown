@@ -47,10 +47,10 @@ import sublime
 import sublime_plugin
 
 _FILENAME_REGEX = re.compile(
-    r'^(.*?)'                            # Title
-    r'\s*'
-    r'(?:\((.*)\))?'                     # Alternative titles
-    r'\s*'
+    r'^('
+    r'(.*?)'                             # Title
+    r'(?:\s*\((.*)\))?'                  # Alternative titles
+    r')'
     r'\.(?:md|mdown|markdown|markdn)$',  # Extension
     flags=re.I)
 
@@ -236,13 +236,18 @@ def _find_notes(view):
 
 @functools.lru_cache(maxsize=2 ** 16)
 def _parse_filename(filename):
+    """Returns a list of (<lower case title>, <title>) 2-tuples describing
+    all the valid titles for the note in filename.
+    """
     match = _FILENAME_REGEX.match(filename)
     if not match:
         return []
-    primary, alt = match.groups()
-    names = [primary]
+    full, primary, alt = match.groups()
     if alt:
+        names = [full, primary]
         names.extend(x.strip() for x in alt.split(','))
+    else:
+        names = [full]
     return [(x.lower(), x) for x in names]
 
 

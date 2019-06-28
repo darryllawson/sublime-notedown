@@ -1,6 +1,6 @@
 # Notedown for Sublime Text
 
-Notedown lets you use [Sublime Text](http://sublimetext.com/) to manage a collection of notes stored as [Markdown](https://en.wikipedia.org/wiki/Markdown) files. Maybe call it a [Personal Wiki](https://en.wikipedia.org/wiki/Personal_wiki)?
+Notedown helps you use [Sublime Text](http://sublimetext.com/) to manage a collection of notes stored as [Markdown](https://en.wikipedia.org/wiki/Markdown) files. Maybe call it a [Personal Wiki](https://en.wikipedia.org/wiki/Personal_wiki)?
 
 Out of the box, Sublime Text with its built-in Markdown support, is fairly effective at note management. However, it lacks one key feature: **linking between notes**.
 
