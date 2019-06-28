@@ -237,17 +237,17 @@ def _find_notes(view):
 @functools.lru_cache(maxsize=2 ** 16)
 def _parse_filename(filename):
     """Returns a list of (<lower case title>, <title>) 2-tuples describing
-    all the valid titles for the note in filename.
+    all the valid titles for the note in filename. The first element is
+    the "primary" name.
     """
     match = _FILENAME_REGEX.match(filename)
     if not match:
         return []
     full, primary, alt = match.groups()
+    names = [primary]
     if alt:
-        names = [full, primary]
+        names.append(full)
         names.extend(x.strip() for x in alt.split(','))
-    else:
-        names = [full]
     return [(x.lower(), x) for x in names]
 
 
@@ -262,10 +262,12 @@ def _create_note(title, view):
     if not sublime.ok_cancel_dialog(text, 'Create File'):
         return
     filename = os.path.join(os.path.dirname(view.file_name()), basename)
-    back_title = os.path.splitext(os.path.basename(view.file_name()))[0]
+
+    back_titles = _parse_filename(os.path.basename(view.file_name()))
+    primary_back_title = back_titles[0][1]
     try:
         with open(filename, 'w') as fileobj:
-            fileobj.write(_NOTE_TEMPLATE.format(title, back_title))
+            fileobj.write(_NOTE_TEMPLATE.format(title, primary_back_title))
     except IOError as exp:
         sublime.error_message('Could not create {}:\n\n{!s}'
                               .format(filename, exp))
