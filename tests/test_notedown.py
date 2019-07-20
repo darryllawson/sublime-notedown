@@ -230,4 +230,5 @@ class MockEventListener():
 
 
 if __name__ == '__main__':
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     unittest.main()

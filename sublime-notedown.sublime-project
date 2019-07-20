@@ -17,7 +17,7 @@
             "name": "Notedown - Test",
             "file_patterns": ["test_notedown.py"],
             "quiet": true,
-            "cmd": ["python3", "-u", "$project_path/test_notedown.py"],
+            "cmd": ["python3", "-u", "$project_path/tests/test_notedown.py"],
             "file_regex": "^\\s*File \"(.+?)\", line ([0-9]*)"
         }
     ]
