@@ -2,26 +2,28 @@
 
 Notedown lets you use [Sublime Text](http://sublimetext.com/) to manage a collection of notes stored as [Markdown](https://en.wikipedia.org/wiki/Markdown) files.
 
-Out of the box, Sublime Text with its built-in Markdown support is fairly effective at note management. However, it lacks one key feature: **linking between notes**.
+Out of the box, Sublime Text with its built-in Markdown support is already fairly effective for managing notes. However, it lacks one key feature: **linking between notes**.
 
-Notedown lets you link to another note like this:
+Notedown fills this gap. It allows you to link to another note with this syntax:
 
 ```text
 [[Note title]]
 ```
 
-Open the linked note with your mouse using `Ctrl` + `Alt` + *Left Mouse Button*, or your keyboard with `Ctrl` + `Alt` + `O`. The keyboard and mouse maps can be configured.
+Follow a link with **Ctrl + Alt + Left Mouse Button** or **Ctrl + Alt + O** (the *Notedown: Open Link* command).
 
-Other features include:
+## Feature
 
-- **Note title auto-completion.** Type `[[` and you're shown a list of notes (Markdown files in the same directory as the current file).
-- **Open a URL** the same way you open a note link.
+- **Link to other notes** with this syntax: `[[Note title]]`.
+- **Note title auto-completion.** Type `[[` and you will be shown a list of notes you can link to.
+- **Note renaming.** Change the Markdown Heading on the first line of the note and the note file will automatically be renamed to match.
+- **Open a URL** with the same shortcuts you use for opening a note.
 - **Note creation.** Click on a link to a note that does not exist and you'll be prompted to create it.
 - **Note link validation.** When you save a note, you'll be shown a list of broken note links.
 
 ## Note links
 
-Syntax:
+Note link syntax:
 
 ```text
 [[<text>]]
@@ -66,10 +68,10 @@ Any common Markdown file extension -- `.md`, `.mdown`, `.markdown`, or `.markdn`
 
 Notedown defines two commands:
 
-- **notedown_open_link**: Opens the note link or URL under the cursor, or mouse selection.
+- **notedown_open_link**: Opens the note link or URL under the cursor or mouse selection.
 
-    - Default mouse map: `Ctrl` + `Alt` + *Left Mouse Button*
-    - Default keyboard map: `Ctrl` + `Alt` + `O`
+    - Default mouse map: **Ctrl + Alt + Left Mouse Button**
+    - Default keyboard map: **Ctrl + Alt + O**
 
 - **notedown_lint**: Lints the current file. This is run automatically when a Markdown file is saved.
 
