@@ -135,6 +135,13 @@ class NotedownLintCommand(_NotedownTextCommand):
 
     def run(self, edit):
         notes = _find_notes(self.view)
+
+        # TODO: check for a valid note title
+        _note_title(self.view)
+
+        self._validate_links(notes)
+
+    def _validate_links(self, notes):
         link_regions = _find_link_regions(self.view)
         broken = []
         for region in link_regions:
@@ -178,7 +185,10 @@ class NotedownEventListener(sublime_plugin.EventListener):
                 pass
 
     def on_post_save_async(self, view):
-        if _viewing_markdown(view):
+        if not _viewing_markdown(view):
+            return
+        renamed = self._reflect_title_in_filename(view)
+        if not renamed:
             view.run_command('notedown_lint')
 
     def on_query_completions(self, view, prefix, locations):
@@ -203,10 +213,56 @@ class NotedownEventListener(sublime_plugin.EventListener):
             return False
         return True
 
+    def _reflect_title_in_filename(self, view):
+        """Returns True if the file was renamed."""
+        try:
+            title = _note_title(view)
+        except _NoTitleError:
+            return False  # Linting will show the error
+
+        old_title, ext = os.path.splitext(os.path.basename(view.file_name()))
+        if title == old_title:
+            return False  # Nothing to do
+
+        new_filename = title + ext
+        text = ('The note title does not match the filename.\n\n'
+                'Rename the file to {}?'.format(new_filename))
+        if not sublime.ok_cancel_dialog(text, 'Rename File'):
+            return False
+
+        old_filename = view.file_name()
+        new_filename = os.path.join(os.path.dirname(old_filename),
+                                    new_filename)
+
+        window = view.window()
+        try:
+            os.rename(old_filename, new_filename)
+        except OSError as exp:  # noqa
+            sublime.error_message('Could not rename {}:\n\n{}'
+                                  .format(old_filename, exp))
+            return False
+        view.close()
+        window.open_file(new_filename)
+        return True
+
 
 def debug(enable=True):
     global _debug_enabled
     _debug_enabled = enable
+
+
+def _note_title(view):
+    """Exracts a note's title from the first line of the view text."""
+    first_line = view.substr(view.line(0))
+    if not view.match_selector(0, 'markup.heading.1.markdown'):
+        raise _NoTitleError(first_line)
+    return first_line[2:].strip()
+
+
+class _NoTitleError(Exception):
+
+    def __init__(self, first_line):
+        self.first_line = first_line
 
 
 @_log_duration
@@ -269,7 +325,7 @@ def _create_note(title, view):
         with open(filename, 'w') as fileobj:
             fileobj.write(_NOTE_TEMPLATE.format(title, primary_back_title))
     except IOError as exp:
-        sublime.error_message('Could not create {}:\n\n{!s}'
+        sublime.error_message('Could not create {}:\n\n{}'
                               .format(filename, exp))
         return
     return filename
