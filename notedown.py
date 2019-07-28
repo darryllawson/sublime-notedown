@@ -225,8 +225,7 @@ class NotedownEventListener(sublime_plugin.EventListener):
             return False  # Nothing to do
 
         new_filename = title + ext
-        text = ('The note title does not match the filename.\n\n'
-                'Rename the file to {}?'.format(new_filename))
+        text = 'Rename this file to {}?'.format(new_filename)
         if not sublime.ok_cancel_dialog(text, 'Rename File'):
             return False
 
