@@ -3,37 +3,37 @@
 Design philosophy
 -----------------
 
-- Minimalism and simplicity.
+- Minimalism, simplicity, and speed.
 - Do nothing that conflicts with the design philosophy of Sublime Text.
 - Orthogonal to Markdown and HTML.
 
 Debugging
 ---------
 
-Enable debug message from the Sublime Text console:
+Enable debug output from the Sublime Text console with:
 
     >>> import Notedown
     >>> Notedown.notedown.debug()
 
-Design notes
-------------
+Design decisions
+----------------
 
 Why Markdown? It is popular, provides a "good enough" structure and
 syntax for notes, provides syntax highlighting for improved readability, and
 it provides heading navigation.
 
-Why [[Note name]] syntax? The requirements were: 1) avoids conflict with
-Markdown or HTML syntax, 2) distinguishable from normal prose, 3) easy to
-read, and 4) efficient to parse. Additionally, this syntax is used in popular
-note-taking apps, for example, Notational Velocity and Bear notes.
+Why [[Note name]] syntax? 1) avoids conflict with Markdown or HTML syntax,
+2) distinguishable from normal prose, 3) easy to read, 4) efficient to
+parse, and 5) can enable for advanced features. Additionally, this syntax is
+used in popular note-taking apps such as Notational Velocity and Bear notes.
 
-Why not WikiWord links? Because you can get false matches with names from code
-and ordinary prose. Also, parsing is less efficient and auto-completion less
-useful.
+Why not WikiWord links? 1) You can get false matches with names from code
+and ordinary prose, 2) parsing is less efficient, 3) auto-completion is less
+useful, and 4) no scope for more advanced features.
 
 Only support a single flat directory of notes, because this is simple, fast,
-and requires no user configuration. I believe notes should be a flat concept
-anyway. Perhaps we'll support tags one day.
+and requires no configuration. I believe notes should be a flat concept
+anyway. Perhaps tags can be supported one day.
 """
 
 import functools
@@ -218,7 +218,7 @@ class NotedownEventListener(sublime_plugin.EventListener):
         try:
             title = _note_title(view)
         except _NoTitleError:
-            return False  # Linting will show the error
+            return False  # Lint will show this error
 
         old_title, ext = os.path.splitext(os.path.basename(view.file_name()))
         if title == old_title:
@@ -242,6 +242,7 @@ class NotedownEventListener(sublime_plugin.EventListener):
             return False
         view.close()
         window.open_file(new_filename)
+
         return True
 
 
@@ -251,7 +252,10 @@ def debug(enable=True):
 
 
 def _note_title(view):
-    """Exracts a note's title from the first line of the view text."""
+    """Extracts a note's title from the first line of the view text.
+
+    Raises _NoTitleError if the note does not have a valid title.
+    """
     first_line = view.substr(view.line(0))
     if not view.match_selector(0, 'markup.heading.1.markdown'):
         raise _NoTitleError(first_line)
@@ -266,8 +270,10 @@ class _NoTitleError(Exception):
 
 @_log_duration
 def _find_notes(view):
-    """Get {<lowercase title>: [(<title>, <filename>)]} dictionary
+    """Returns a {<lowercase title>: [(<title>, <filename>)]} dictionary
     representing the notes in the directory containing the file shown in view.
+
+    Results are cached in _notes_cache.
     """
     path = os.path.dirname(view.file_name())
 
@@ -307,9 +313,10 @@ def _parse_filename(filename):
 
 
 def _create_note(title, view):
-    """Create a new note with the given title.
+    """Creates a new note.
 
-    Returns None if the user canceled or there was an error.
+    Returns the filename of the new note or None if the user canceled or
+    there was an error.
     """
     basename = '{}.{}'.format(title, _setting('markdown_extension',
                                               _DEFAULT_EXTENSION))
@@ -327,15 +334,16 @@ def _create_note(title, view):
         sublime.error_message('Could not create {}:\n\n{}'
                               .format(filename, exp))
         return
+
     return filename
 
 
 @_log_duration
 def _find_link_regions(view):
-    """Returns a list of sublime.Region objects describing the locations of
-    note links within a Markdown file.
+    """Returns a list of sublime.Region objects describing link locations
+    within a Markdown file.
 
-    Results are cached in the _link_regions_cache global.
+    Results are cached in _link_regions_cache.
     """
     last_change_count, regions = _link_regions_cache.get(view.buffer_id(),
                                                          (None, None))
