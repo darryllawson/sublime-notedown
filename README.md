@@ -1,25 +1,32 @@
 # Notedown for Sublime Text
 
-Notedown lets you use [Sublime Text](http://sublimetext.com/) to manage a collection of notes stored as [Markdown](https://en.wikipedia.org/wiki/Markdown) files.
+Notedown lets you use [Sublime Text](http://sublimetext.com/) to manage notes stored as [Markdown](https://en.wikipedia.org/wiki/Markdown) files.
 
-Out of the box, Sublime Text with its built-in Markdown support is already fairly effective for managing notes. However, it lacks one key feature: **linking between notes**.
+Out of the box, Sublime Text with its built-in Markdown support, is already pretty good for managing notes. However, it lacks one key feature: **linking between notes**.
 
-Notedown fills this gap. It allows you to link to another note with this syntax:
+Notedown fills this gap. It lets you to link to another note with
 
 ```text
 [[Note title]]
 ```
 
-Follow a link with **Ctrl + Alt + Left Mouse Button** or **Ctrl + Alt + O** (the *Notedown: Open Link* command).
+Follow a link with **Ctrl + Alt + Left Mouse Button** or by positioning the cursor and pressing **Ctrl + Alt + O** or selecting **Notedown: Open Link** in the command palette.
 
-## Feature
+## Features
 
-- **Link to other notes** with this syntax: `[[Note title]]`.
-- **Note title auto-completion.** Type `[[` and you will be shown a list of notes you can link to.
-- **Note renaming.** Change the Markdown Heading on the first line of the note and the note file will automatically be renamed to match.
-- **Open a URL** with the same shortcuts you use for opening a note.
-- **Note creation.** Click on a link to a note that does not exist and you'll be prompted to create it.
-- **Note link validation.** When you save a note, you'll be shown a list of broken note links.
+Features provided by Notedown:
+
+- **Link to another note** with `[[Note title]]`.
+- **Note title auto-completion.** Type `[[` and you're shown a list of notes you can link to.
+- **Note renaming.** Change the Markdown heading and the note file is automatically renamed to match.
+- **Open a URL** conforming to the Markdown syntax with the same shortcuts you use for opening a note.
+- **Create a new note** by attempting to open a link to a note that does not exist.
+- **Note link validation.** On save, you'll be shown a list of broken note links.
+
+Note keeping features built into Sublime Text:
+
+* **Search for a note** with *Goto Anything* (**Command + P** or **Ctrl + P**).
+* **Goto a heading within a note** with *Goto Symbol* (**Command + R** or **Ctrl + R**).
 
 ## Note links
 
@@ -66,19 +73,22 @@ Any common Markdown file extension -- `.md`, `.mdown`, `.markdown`, or `.markdn`
 
 ## Commands
 
-Notedown defines two commands:
+Notedown provides these Sublime Text commands:
 
 - **notedown_open_link**: Opens the note link or URL under the cursor or mouse selection.
 
     - Default mouse map: **Ctrl + Alt + Left Mouse Button**
     - Default keyboard map: **Ctrl + Alt + O**
 
-- **notedown_lint**: Lints the current file. This is run automatically when a Markdown file is saved.
+- **notedown_lint**: Lints the current note. This is run automatically when a note is saved.
 
-## User Settings
+## Settings
 
-Notedown looks for user settings in `Notedown.sublime-settings`.
+Notedown looks for settings in `Notedown.sublime-settings`.
 
-Notedown supports a single user setting:
+Notedown supports these settings:
 
-- **markdown_extension**: Defines the file extension to use when creating new notes. Do not include a leading period (`.`). If not defined, `md` is used.
+- **markdown_extension**: The file extension used when creating new notes. This should not include a leading period (`.`). If not defined, `md` is used. Example: `"markdown_extension": "markdown"`.
+
+- **note_folder_patterns**: Defines which folders contain *notes* compatible with Notedown. The folder patterns (which may use wildcards compatible with [fnmatch](https://docs.python.org/3/library/fnmatch.html#fnmatch.fnmatch)) are matched against the name of a Markdown file's containing folder to determine if the file should be considered a note. If not defined or an empty list, then all Markdown files are considered to be notes. Example: `"note_folder_patterns": ["Notes"]`.
+

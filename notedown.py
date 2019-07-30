@@ -36,6 +36,7 @@ and requires no configuration. I believe notes should be a flat concept
 anyway. Perhaps tags can be supported one day.
 """
 
+import fnmatch
 import functools
 import os
 import re
@@ -79,10 +80,10 @@ def _log_duration(f):
 class _NotedownTextCommand(sublime_plugin.TextCommand):
 
     def is_enabled(self):
-        return _viewing_markdown(self.view)
+        return _viewing_a_note(self.view)
 
     def is_visible(self):
-        return _viewing_markdown(self.view)
+        return _viewing_a_note(self.view)
 
 
 class NotedownOpenLinkCommand(_NotedownTextCommand):
@@ -185,25 +186,27 @@ class NotedownEventListener(sublime_plugin.EventListener):
                 pass
 
     def on_post_save_async(self, view):
-        if not _viewing_markdown(view):
+        if not _viewing_a_note(view):
             return
+
         renamed = self._reflect_title_in_filename(view)
         if not renamed:
             view.run_command('notedown_lint')
 
     def on_query_completions(self, view, prefix, locations):
+        if not _viewing_a_note(view):
+            return False
+
         if not self._can_show_completions(view, locations):
             return
+
         file_name = view.file_name()
         titles = {y for x in _find_notes(view).values() for y, z in x
                   if not os.path.samefile(z, file_name)}
         return [[x + '\tNote', x + ']]'] for x in sorted(titles)]
 
     def _can_show_completions(self, view, locations):
-        # To show completions, must be a Markdown view, not in raw scope, and
-        # [[ has been typed.
-        if not _viewing_markdown(view):
-            return False
+        # Show completions if not in raw scope and [[ has been typed.
         point = locations[0]
         if view.match_selector(point, 'markup.raw'):
             return False
@@ -318,7 +321,7 @@ def _create_note(title, view):
     Returns the filename of the new note or None if the user canceled or
     there was an error.
     """
-    basename = '{}.{}'.format(title, _setting('markdown_extension',
+    basename = '{}.{}'.format(title, _setting('markdown_extension', str,
                                               _DEFAULT_EXTENSION))
     text = 'Do you want to create {}?'.format(basename)
     if not sublime.ok_cancel_dialog(text, 'Create File'):
@@ -356,6 +359,37 @@ def _find_link_regions(view):
     return regions
 
 
+def _viewing_a_note(view):
+    if not view.match_selector(0, 'text.html.markdown'):
+        return False
+
+    note_folder_patterns = _setting('note_folder_patterns', list)
+    if not note_folder_patterns:
+        return True
+    if any(not isinstance(x, str) for x in note_folder_patterns):
+        _invalid_setting('note_folder_patterns', note_folder_patterns,
+                         '[str, ...]')
+        return False
+
+    note_folder = os.path.basename(os.path.dirname(view.file_name()))
+    return any(fnmatch.fnmatch(note_folder, x) for x in note_folder_patterns)
+
+
+def _setting(name, type_, default=None):
+    value = sublime.load_settings('Notedown.sublime-settings').get(name,
+                                                                   default)
+    if value is not default and not isinstance(value, type_):
+        _invalid_setting(name, value, type_)
+        return default
+    else:
+        return value
+
+
+def _invalid_setting(name, value, type_):
+    sublime.error_message('Invalid Notedown setting "{}":\n\n{!r}\n\n'
+                          'Must be of type {}.'.format(name, value, type_))
+
+
 def _debug_log(message):
     if _debug_enabled:
         _log(message)
@@ -365,14 +399,6 @@ def _log(message):
     sys.stdout.write('Notedown: {}\n'.format(message))
     sys.stdout.flush()
 
-
-def _viewing_markdown(view):
-    return view.match_selector(0, 'text.html.markdown')
-
-
-def _setting(name, default=None):
-    return sublime.load_settings('Notedown.sublime-settings').get(name,
-                                                                  default)
 
 _debug_enabled = False
 _notes_cache = {}             # {path: (mtime, notes dict)}
