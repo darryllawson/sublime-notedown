@@ -1,0 +1,15 @@
+Notedown release history
+
+
+1.1.0, 1 August 2019
+
+- Changing the Markdown heading of a note will now automatically prompt you
+  to rename the file to match.
+
+- Adds support for a "note_folder_patterns" setting which lets you specify
+  which folders contain notes.
+
+
+1.0.0, 30 June 2019
+
+- Initial release.
