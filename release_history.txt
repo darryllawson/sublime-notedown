@@ -1,6 +1,3 @@
-Notedown release history
-
-
 1.1.0, 1 August 2019
 
 - Changing the Markdown heading of a note will now automatically prompt you
