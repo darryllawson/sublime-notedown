@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import sys
@@ -217,6 +218,17 @@ class TestFindingLinkRegions(NotedownTestCase):
         regions = notedown._find_link_regions(self.view_1)
         new_regions = notedown._find_link_regions(self.view_1)
         self.assertIs(new_regions, regions)
+
+
+class TestMessageJson(unittest.TestCase):
+
+    def test(self):
+        rootdir = os.path.join(os.path.dirname(__file__), os.pardir)
+        messages_filename = os.path.join(rootdir, 'messages.json')
+        with open(messages_filename, 'r') as fp:
+            contents = json.load(fp)
+        self.assertEqual(contents,
+                         {"1.1.0": "release_history.txt"})
 
 
 class MockTextCommand():

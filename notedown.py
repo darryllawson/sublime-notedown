@@ -18,20 +18,20 @@ Enable debug output from the Sublime Text console with:
 Design decisions
 ----------------
 
-Why Markdown? It is popular, provides a "good enough" structure and
-syntax for notes, provides syntax highlighting for improved readability, and
-it provides heading navigation.
+Why Markdown? It's popular, provides a "good enough" structure and syntax for
+notes, provides syntax highlighting for improved readability, and it provides
+heading navigation (with Command + R).
 
-Why [[Note name]] syntax? 1) avoids conflict with Markdown or HTML syntax,
-2) distinguishable from normal prose, 3) easy to read, 4) efficient to
-parse, and 5) can enable for advanced features. Additionally, this syntax is
-used in popular note-taking apps such as Notational Velocity and Bear notes.
+Why the [[Note name]] syntax? 1) Avoids conflict with Markdown or HTML syntax,
+2) distinguishable from normal prose, 3) easy to read, and 4) efficient to
+parse. Additionally, this syntax is used in other popular note-taking apps
+such as Notational Velocity and Bear notes.
 
 Why not WikiWord links? 1) You can get false matches with names from code
-and ordinary prose, 2) parsing is less efficient, 3) auto-completion is less
-useful, and 4) no scope for more advanced features.
+and ordinary prose, 2) parsing is less efficient, and 3) auto-completion is
+less useful.
 
-Only support a single flat directory of notes, because this is simple, fast,
+Only support a single flat directory of notes because this is simple, fast,
 and requires no configuration. I believe notes should be a flat concept
 anyway. Perhaps tags can be supported one day.
 """
@@ -135,44 +135,48 @@ class NotedownOpenLinkCommand(_NotedownTextCommand):
 class NotedownLintCommand(_NotedownTextCommand):
 
     def run(self, edit):
-        notes = _find_notes(self.view)
+        self.errors = []  # [(description, region, edit_region)]
+        self.notes = _find_notes(self.view)
+        self._check_note_title()
+        self._find_broken_links()
+        self._highlight_errors()
+        self._show_error_list()
 
-        # TODO: check for a valid note title
-        _note_title(self.view)
+    def _check_note_title(self):
+        if not _note_title(self.view):
+            self.errors.append(
+                ('Invalid note title (must start with #)',
+                 self.view.line(0), sublime.Region(0, 0)))
 
-        self._validate_links(notes)
+    def _find_broken_links(self):
+        for region in _find_link_regions(self.view):
+            text_region = sublime.Region(region.begin() + len('[['),
+                                         region.end() - len(']]'))
+            if self.view.substr(text_region).lower() not in self.notes:
+                self.errors.append(('Missing note file', region, text_region))
 
-    def _validate_links(self, notes):
-        link_regions = _find_link_regions(self.view)
-        broken = []
-        for region in link_regions:
-            title = self.view.substr(region)[2:-2]
-            if title.lower() not in notes:
-                broken.append((region, title))
-        self._highlight(broken)
-        self._show_list(broken)
-
-    def _highlight(self, broken):
-        self.view.add_regions('notedown', [x for x, y in broken],
+    def _highlight_errors(self):
+        self.view.add_regions('notedown',
+                              [region for _, region, _ in self.errors],
                               'invalid.illegal', '', sublime.DRAW_NO_FILL)
 
-    def _show_list(self, broken):
+    def _show_error_list(self):
         self.view.window().show_quick_panel(
-            [self._format_item(x, y) for x, y in broken],
-            lambda x: self._on_item_selected(x, broken))
+            [self._format_error(x) for x in self.errors],
+            self._on_error_selected)
 
-    def _format_item(self, region, text):
+    def _format_error(self, error):
+        description, region, _ = error
         row, _ = self.view.rowcol(region.begin())
-        return ['Note file not found',
-                'Line {}: [[{}]]'.format(row + 1, text)]
+        text = self.view.substr(region)
+        return [description, 'Line {}: {}'.format(row + 1, text)]
 
-    def _on_item_selected(self, index, broken):
-        if index == -1:  # Canceled by user
+    def _on_error_selected(self, index):
+        if index == -1:  # Canceled
             return
-        region, _ = broken[index]
+        _, region, edit_region = self.errors[index]
         self.view.sel().clear()
-        self.view.sel().add(sublime.Region(region.begin() + len('[['),
-                                           region.end() - len(']]')))
+        self.view.sel().add(edit_region)
         self.view.show(self.view.sel())
 
 
@@ -218,14 +222,13 @@ class NotedownEventListener(sublime_plugin.EventListener):
 
     def _reflect_title_in_filename(self, view):
         """Returns True if the file was renamed."""
-        try:
-            title = _note_title(view)
-        except _NoTitleError:
-            return False  # Lint will show this error
+        title = _note_title(view)
+        if not title:
+            return False
 
         old_title, ext = os.path.splitext(os.path.basename(view.file_name()))
         if title == old_title:
-            return False  # Nothing to do
+            return False
 
         new_filename = title + ext
         text = 'Rename this file to {}?'.format(new_filename)
@@ -255,20 +258,10 @@ def debug(enable=True):
 
 
 def _note_title(view):
-    """Extracts a note's title from the first line of the view text.
-
-    Raises _NoTitleError if the note does not have a valid title.
-    """
-    first_line = view.substr(view.line(0))
+    """Returns the title of the note in view or None if there is no title."""
     if not view.match_selector(0, 'markup.heading.1.markdown'):
-        raise _NoTitleError(first_line)
-    return first_line[2:].strip()
-
-
-class _NoTitleError(Exception):
-
-    def __init__(self, first_line):
-        self.first_line = first_line
+        return None
+    return view.substr(view.line(0))[2:].strip()
 
 
 @_log_duration

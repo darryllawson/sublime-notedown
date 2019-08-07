@@ -1,3 +1,8 @@
+1.2.0, ?
+
+- The *notedown_lint* command now checks for a valid note title. That is, it requires that the first line of the note is a Markdown Heading 1.
+
+
 1.1.0, 1 August 2019
 
 - Changing the Markdown heading of a note will now automatically prompt you
