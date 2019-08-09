@@ -1,10 +1,20 @@
-1.2.0, 8 August 2019
+1.3.0 - ?
+---------
+
+- Simplifies the note link semantics. The note link text can no longer be the
+  filename with the Markdown extension omitted, it must be either the note's
+  primary title or an alternative title. This makes the semantics easier to
+  understand and document, and makes note title auto completion a little nicer
+  to use.
+
+1.2.0 - 8 August 2019
+---------------------
 
 - The notedown_lint command now checks for a valid note title. That is,
   it requires that the first line of the note is a Markdown Heading 1.
 
-
-1.1.0, 1 August 2019
+1.1.0 - 1 August 2019
+---------------------
 
 - Changing the Markdown heading of a note will now automatically prompt you
   to rename the file to match.
@@ -12,7 +22,7 @@
 - Adds support for a "note_folder_patterns" setting which lets you specify
   which folders contain notes.
 
-
-1.0.0, 30 June 2019
+1.0.0 - 30 June 2019
+--------------------
 
 - Initial release.

@@ -28,6 +28,24 @@ Note keeping features built into Sublime Text:
 * **Search for a note** with *Goto Anything* (**Command + P** or **Ctrl + P**).
 * **Goto a heading within a note** with *Goto Symbol* (**Command + R** or **Ctrl + R**).
 
+## Note filenames and titles
+
+Each note has one *primary* title and any number of *alternative* titles defined by the note's file name:
+
+```text
+<title>.md
+<title> (<alternative title>).md
+<title> (<alternative title>, <alternative title>, ...).md
+```
+
+Any Markdown file extension -- `.md`, `.mdown`, `.markdown`, or `.markdn` -- can be used.
+
+`<title>` and `<alternative title>` must not include any of these characters:
+
+```text
+( ) ,
+```
+
 ## Note links
 
 Note link syntax:
@@ -36,39 +54,20 @@ Note link syntax:
 [[<text>]]
 ```
 
-`<text>` can be a note title, an *alternative* note title, or a filename with the Markdown extension omitted.
+`<text>` can be a *primary* or *alternative* note title.
 
-For example, all of these links,
+All of these links,
 
 ```text
 [[Foo]]
 [[Bar]]
 [[Goo]]
-[[Foo (Bar, Goo)]]
 ```
 
 link to the file,
 
 ```text
 Foo (Bar, Goo).md
-```
-
-## Note titles and file names
-
-Each note has one title and any number of *alternative* titles defined by the note's file name:
-
-```text
-<title>.md
-<title> (<alternative title>).md
-<title> (<alternative title>, <alternative title>, ...).md
-```
-
-Any common Markdown file extension -- `.md`, `.mdown`, `.markdown`, or `.markdn` -- can be used.
-
-`<title>` and `<alternative title>` must not include any of these characters:
-
-```text
-( ) ,
 ```
 
 ## Commands

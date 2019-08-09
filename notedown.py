@@ -48,11 +48,11 @@ import sublime
 import sublime_plugin
 
 _FILENAME_REGEX = re.compile(
-    r'^('
-    r'(.*?)'                             # Title
+    r'^'
+    r'(.*?)'                             # Primary title
     r'(?:\s*\((.*)\))?'                  # Alternative titles
-    r')'
-    r'\.(?:md|mdown|markdown|markdn)$',  # Extension
+    r'\.(?:md|mdown|markdown|markdn)'    # Extension
+    r'$',
     flags=re.I)
 
 _DEFAULT_EXTENSION = 'md'
@@ -242,7 +242,7 @@ class NotedownEventListener(sublime_plugin.EventListener):
         window = view.window()
         try:
             os.rename(old_filename, new_filename)
-        except OSError as exp:  # noqa
+        except OSError as exp:
             sublime.error_message('Could not rename {}:\n\n{}'
                                   .format(old_filename, exp))
             return False
@@ -294,16 +294,14 @@ def _find_notes(view):
 @functools.lru_cache(maxsize=2 ** 16)
 def _parse_filename(filename):
     """Returns a list of (<lower case title>, <title>) 2-tuples describing
-    all the valid titles for the note in filename. The first element is
-    the "primary" name.
+    the primary (the first element) and alternative titles for filename.
     """
     match = _FILENAME_REGEX.match(filename)
     if not match:
         return []
-    full, primary, alt = match.groups()
+    primary, alt = match.groups()
     names = [primary]
     if alt:
-        names.append(full)
         names.extend(x.strip() for x in alt.split(','))
     return [(x.lower(), x) for x in names]
 
