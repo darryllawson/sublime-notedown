@@ -7,6 +7,9 @@
   understand and document, and makes note title auto completion a little nicer
   to use.
 
+- Renamed the "notedown_open_link" command to "notedown_open" as it can be
+  used to open something that is not a note.
+
 1.2.0 - 8 August 2019
 ---------------------
 

@@ -1,7 +1,7 @@
 [
     {
-        "caption": "Notedown: Open Link",
-        "command": "notedown_open_link"
+        "caption": "Notedown: Open",
+        "command": "notedown_open"
     },
     {
         "caption": "Notedown: Lint",

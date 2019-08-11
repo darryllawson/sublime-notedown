@@ -74,12 +74,12 @@ Foo (Bar, Goo).md
 
 Notedown provides these Sublime Text commands:
 
-- **notedown_open_link**: Opens the note link or URL under the cursor or mouse selection.
+- **notedown_open**: Open the link under the cursor or mouse selection.
 
     - Default mouse map: **Ctrl + Alt + Left Mouse Button**
     - Default keyboard map: **Ctrl + Alt + O**
 
-- **notedown_lint**: Lints the current note. This is run automatically when a note is saved.
+- **notedown_lint**: Lints the current note. Runs automatically when a note is saved.
 
 ## Settings
 

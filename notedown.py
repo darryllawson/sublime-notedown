@@ -57,6 +57,8 @@ _FILENAME_REGEX = re.compile(
 
 _DEFAULT_EXTENSION = 'md'
 
+_URL_SELECTOR = 'markup.underline.link'
+
 _NOTE_TEMPLATE = """\
 # {}
 
@@ -86,57 +88,60 @@ class _NotedownTextCommand(sublime_plugin.TextCommand):
         return _viewing_a_note(self.view)
 
 
-class NotedownOpenLinkCommand(_NotedownTextCommand):
+class NotedownOpenCommand(_NotedownTextCommand):
 
     def run(self, edit):
-        notes = _find_notes(self.view)
-        link_regions = _find_link_regions(self.view)
+        self._notes = _find_notes(self.view)
+        self._link_regions = _find_link_regions(self.view)
         for selection in self.view.sel():
-            self._handle_selection(selection, link_regions, notes)
-
-    def _handle_selection(self, selection, link_regions, notes):
-        if selection.empty():
-            point = selection.begin()
-            if self.view.match_selector(point, 'markup.underline.link'):
-                target = self.view.substr(self.view.extract_scope(point))
-                webbrowser.open(target)
+            if selection.empty():
+                self._open_point(selection.begin())
             else:
-                title = self._title_at_point(point, link_regions)
-                if title:
-                    self._open_note(title, notes)
-        else:  # Text is selected
-            self._open_note(self.view.substr(selection), notes)
+                self._open_selection(self.view.substr(selection))
 
-    def _title_at_point(self, point, link_regions):
-        for region in link_regions:
+    def _open_point(self, point):
+        if self.view.match_selector(point, _URL_SELECTOR):
+            webbrowser.open(self.view.substr(self.view.extract_scope(point)))
+        else:
+            title = self._title_at_point(point)
+            if title:
+                self._open_note(title)
+
+    def _open_selection(self, text):
+        self._open_note(text)
+
+    def _open_note(self, title):
+        try:
+            filenames = [x for _, x in self._notes[title.lower()]]
+        except KeyError:
+            filename = _create_note(title, self.view)
+            if filename:  # Not cancelled
+                self._open_file(filename)
+            return
+
+        if len(filenames) > 1:
+            def on_done(index):
+                if index != -1:  # Not cancelled
+                    self._open_file(filenames[index])
+            self.view.window().show_quick_panel(filenames, on_done)
+        else:
+            self._open_file(filenames.pop())
+
+    def _open_file(self, filename):
+        self.view.window().open_file(filename)
+
+    def _title_at_point(self, point):
+        for region in self._link_regions:
             if region.contains(point):
                 return self.view.substr(region)[2:-2]
         return self.view.substr(self.view.word(point))
-
-    def _open_note(self, title, notes):
-        try:
-            filenames = [x for _, x in notes[title.lower()]]
-        except KeyError:
-            filename = _create_note(title, self.view)
-            if not filename:
-                return
-            filenames = [filename]
-
-        def on_done(index):
-            if index != -1:  # Not canceled
-                self.view.window().open_file(filenames[index])
-
-        if len(filenames) > 1:
-            self.view.window().show_quick_panel(filenames, on_done)
-        else:
-            self.view.window().open_file(filenames.pop())
 
 
 class NotedownLintCommand(_NotedownTextCommand):
 
     def run(self, edit):
         self.errors = []  # [(description, region, edit_region)]
-        self.notes = _find_notes(self.view)
+        self._notes = _find_notes(self.view)
         self._check_note_title()
         self._find_broken_links()
         self._highlight_errors()
@@ -152,7 +157,7 @@ class NotedownLintCommand(_NotedownTextCommand):
         for region in _find_link_regions(self.view):
             text_region = sublime.Region(region.begin() + len('[['),
                                          region.end() - len(']]'))
-            if self.view.substr(text_region).lower() not in self.notes:
+            if self.view.substr(text_region).lower() not in self._notes:
                 self.errors.append(('Missing note file', region, text_region))
 
     def _highlight_errors(self):

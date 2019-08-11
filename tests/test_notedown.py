@@ -62,11 +62,11 @@ class NotedownTestCase(unittest.TestCase):
         return filename
 
 
-class TestNotedownOpenLinkCommand(NotedownTestCase):
+class TestNotedownOpenCommand(NotedownTestCase):
 
     def setUp(self):
         super().setUp()
-        self.command = notedown.NotedownOpenLinkCommand(self.view_1)
+        self.command = notedown.NotedownOpenCommand(self.view_1)
 
     def test_enabled_and_visible_when_viewing_markdown(self):
         self.view_1.match_selector.return_value = True
