@@ -1,8 +1,8 @@
 # Notedown for Sublime Text
 
-Notedown lets you use [Sublime Text](http://sublimetext.com/) to manage notes stored as [Markdown](https://en.wikipedia.org/wiki/Markdown) files.
+Notedown lets you use [Sublime Text](http://sublimetext.com/) for keeping notes stored as [Markdown](https://en.wikipedia.org/wiki/Markdown) files.
 
-Out of the box, Sublime Text with its built-in Markdown support, is already pretty good for managing notes. However, it lacks one key feature: **linking between notes**.
+Sublime Text, with its built-in Markdown support, is pretty good at managing notes. But it lacks one key feature: **linking between notes**.
 
 Notedown fills this gap. It lets you to link to another note with
 
@@ -10,7 +10,7 @@ Notedown fills this gap. It lets you to link to another note with
 [[Note title]]
 ```
 
-Follow a link with **Ctrl + Alt + Left Mouse Button** or by positioning the cursor and pressing **Ctrl + Alt + O** or selecting **Notedown: Open Link** in the command palette.
+Follow a link with **Ctrl + Alt + Left Mouse Button** or by positioning the cursor and pressing **Ctrl + Alt + O** or selecting **Notedown: Open Link** from the command palette.
 
 ## Features
 
@@ -30,33 +30,28 @@ Note keeping features built into Sublime Text:
 
 ## Note filenames and titles
 
-Each note has one *primary* title and any number of *alternative* titles defined by the note's file name:
+A note has one or more titles defined by its file name:
 
 ```text
 <title>.md
-<title> (<alternative title>).md
-<title> (<alternative title>, <alternative title>, ...).md
+<title> ~ <title>.md
+<title> ~ <title> ~ <title>.md
+...
 ```
 
-Any Markdown file extension -- `.md`, `.mdown`, `.markdown`, or `.markdn` -- can be used.
+The tilde character (`~`) is used to separate multiple note titles. `<title>` must not contain tilde characters.
 
-`<title>` and `<alternative title>` must not include any of these characters:
-
-```text
-( ) ,
-```
+Any Markdown file extension (`.md`, `.mdown`, `.markdown`, or `.markdn`) can be used.
 
 ## Note links
 
 Note link syntax:
 
 ```text
-[[<text>]]
+[[<title>]]
 ```
 
-`<text>` can be a *primary* or *alternative* note title.
-
-All of these links,
+For example, all of the following links,
 
 ```text
 [[Foo]]
@@ -64,10 +59,10 @@ All of these links,
 [[Goo]]
 ```
 
-link to the file,
+link to the same file:
 
 ```text
-Foo (Bar, Goo).md
+Foo ~ Bar ~ Goo.md
 ```
 
 ## Commands

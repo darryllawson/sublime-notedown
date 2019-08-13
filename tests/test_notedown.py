@@ -29,13 +29,12 @@ class NotedownTestCase(unittest.TestCase):
 
     def setUp(self):
         self.notes_dir = tempfile.mkdtemp()
-        self.note_1 = self.create_file('Note one')
-        self.note_2 = self.create_file('Note two (Alt one)')
-        self.note_3 = self.create_file('Note three (Alt two, ALT one)')
+        self.note_1 = self.create_file('One')
+        self.note_2 = self.create_file('two ~ one')
+        self.note_3 = self.create_file('Three ~ Alt  ~  ONE')
         self.not_md = self.create_file('not_md', ext='.txt')
         self.view_1 = self.mock_view(self.note_1)
 
-    # TODO: these mock methods should be functions?
     def mock_view(self, file_name, ident=1):
         view = mock.Mock()
         view.file_name = mock.Mock(return_value=file_name)
@@ -120,17 +119,16 @@ class TestFindingNotes(NotedownTestCase):
 
     def test_notes_dict(self):
         notes = notedown._find_notes(self.view_1)
-        self.assertEqual(notes.keys(), {'note one',
-                                        'note two',
-                                        'alt one',
-                                        'note three',
-                                        'alt two'})
-        self.assertEqual(notes['note one'], [('Note one', self.note_1)])
-        self.assertEqual(notes['note two'], [('Note two', self.note_2)])
-        self.assertEqual(notes['alt one'], [('Alt one', self.note_2),
-                                            ('ALT one', self.note_3)])
-        self.assertEqual(notes['note three'], [('Note three', self.note_3)])
-        self.assertEqual(notes['alt two'], [('Alt two', self.note_3)])
+        self.assertEqual(notes.keys(), {'one',
+                                        'two',
+                                        'three',
+                                        'alt'})
+        self.assertEqual(set(notes['one']), {('One', self.note_1),
+                                             ('one', self.note_2),
+                                             ('ONE', self.note_3)})
+        self.assertEqual(notes['two'], [('two', self.note_2)])
+        self.assertEqual(notes['three'], [('Three', self.note_3)])
+        self.assertEqual(notes['alt'], [('Alt', self.note_3)])
 
     def test_cache(self):
         notes = notedown._find_notes(self.view_1)
@@ -180,7 +178,7 @@ class TestCreatingNote(NotedownTestCase):
         with open(os.path.join(self.notes_dir, 'Foo.md'), 'r') as f:
             self.assertEqual(f.read(), '# Foo\n\n'
                                        'See also:\n\n'
-                                       '- [[Note one]]\n')
+                                       '- [[One]]\n')
 
     @mock.patch('sublime.error_message')
     @mock.patch('notedown.open', side_effect=IOError('boom'))

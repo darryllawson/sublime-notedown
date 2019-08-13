@@ -1,14 +1,15 @@
 1.3.0 - ?
 ---------
 
-- Simplifies the note link semantics. The note link text can no longer be the
-  filename with the Markdown extension omitted, it must be either the note's
-  primary title or an alternative title. This makes the semantics easier to
-  understand and document, and makes note title auto completion a little nicer
-  to use.
+- Simplified the note filename syntax. Changed from
+  "<primary title> (<alternative title>, ...)" to "<title> ~ <title> ~ ...".
 
-- Renamed the "notedown_open_link" command to "notedown_open" as it can be
-  used to open something that is not a note.
+- Simplified the note link semantics. The note link text can no longer be a
+  note filename with the Markdown extension omitted, it must be one of the
+  note's titles.
+
+- Renamed the "notedown_open_link" command to "notedown_open", because it can
+  be used to open something that is not a note.
 
 1.2.0 - 8 August 2019
 ---------------------

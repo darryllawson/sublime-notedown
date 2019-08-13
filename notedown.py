@@ -31,6 +31,10 @@ Why not WikiWord links? 1) You can get false matches with names from code
 and ordinary prose, 2) parsing is less efficient, and 3) auto-completion is
 less useful.
 
+Why tilde (~) to separate note titles? Need a character that does not
+clash with typical note titles (rules out - , .) and can be used on all
+operating systems (rules out |).
+
 Only support a single flat directory of notes because this is simple, fast,
 and requires no configuration. I believe notes should be a flat concept
 anyway. Perhaps tags can be supported one day.
@@ -54,6 +58,8 @@ _FILENAME_REGEX = re.compile(
     r'\.(?:md|mdown|markdown|markdn)'    # Extension
     r'$',
     flags=re.I)
+
+_MARKDOWN_EXTENSIONS = {'.md', '.mdown', '.markdown', '.markdn'}
 
 _DEFAULT_EXTENSION = 'md'
 
@@ -298,17 +304,11 @@ def _find_notes(view):
 
 @functools.lru_cache(maxsize=2 ** 16)
 def _parse_filename(filename):
-    """Returns a list of (<lower case title>, <title>) 2-tuples describing
-    the primary (the first element) and alternative titles for filename.
-    """
-    match = _FILENAME_REGEX.match(filename)
-    if not match:
+    """Returns a list of (<lower case title>, <title>) 2-tuples."""
+    base, ext = os.path.splitext(filename)
+    if ext not in _MARKDOWN_EXTENSIONS:
         return []
-    primary, alt = match.groups()
-    names = [primary]
-    if alt:
-        names.extend(x.strip() for x in alt.split(','))
-    return [(x.lower(), x) for x in names]
+    return [(x.lower(), x) for x in (y.strip() for y in base.split('~'))]
 
 
 def _create_note(title, view):
