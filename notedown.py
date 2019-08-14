@@ -41,7 +41,6 @@ anyway. Perhaps tags can be supported one day.
 """
 
 import fnmatch
-import functools
 import os
 import re
 import sys
@@ -56,6 +55,8 @@ _MARKDOWN_EXTENSIONS = {'.md', '.mdown', '.markdown', '.markdn'}
 _DEFAULT_EXTENSION = 'md'
 
 _URL_SELECTOR = 'markup.underline.link'
+
+_TITLE_SEP = '~'
 
 _NOTE_TEMPLATE = """\
 # {}
@@ -110,7 +111,8 @@ class NotedownOpenCommand(_NotedownTextCommand):
 
     def _open_note(self, title):
         try:
-            filenames = [x for _, x in self._notes[title.lower()]]
+            filenames = [_full_path(self.view, x)
+                         for _, x in self._notes[title.lower()]]
         except KeyError:
             filename = _create_note(title, self.view)
             if filename:  # Not cancelled
@@ -252,7 +254,16 @@ class NotedownEventListener(sublime_plugin.EventListener):
         view.close()
         window.open_file(new_filename)
 
+        self._update_links(view)
+
         return True
+
+    @_log_duration
+    def _update_links(self, view, old_title, new_title):
+        _find_notes(view)
+        # For each filename, do a regex replacement
+        _titles(old_title)
+        _titles(new_title)
 
 
 def debug(enable=True):
@@ -274,53 +285,47 @@ def _find_notes(view):
 
     Results are cached in _notes_cache.
     """
-    path = os.path.dirname(view.file_name())
-
-    mtime, notes = _notes_cache.get(path, (None, None))
-    if mtime == os.stat(path).st_mtime:
+    notes_dir = _notes_dir(view)
+    mtime, notes = _notes_cache.get(notes_dir, (None, None))
+    if mtime == os.stat(notes_dir).st_mtime:
         return notes
 
     notes = {}
-    for name in os.listdir(path):
-        titles = _parse_filename(name)
-        if titles:
-            filename = os.path.join(path, name)
-            for lower_title, title in titles:
-                if lower_title in notes:
-                    notes[lower_title].append((title, filename))
-                else:
-                    notes[lower_title] = [(title, filename)]
-    _notes_cache[path] = os.stat(path).st_mtime, notes
+    for name in os.listdir(notes_dir):
+        base, ext = os.path.splitext(name)
+        if ext not in _MARKDOWN_EXTENSIONS:
+            continue
+        for title in _titles(base):
+            lower_title = title.lower()
+            if lower_title in notes:
+                notes[lower_title].append((title, name))
+            else:
+                notes[lower_title] = [(title, name)]
+
+    _notes_cache[notes_dir] = os.stat(notes_dir).st_mtime, notes
     return notes
 
 
-@functools.lru_cache(maxsize=2 ** 16)
-def _parse_filename(filename):
-    """Returns a list of (<lower case title>, <title>) 2-tuples."""
-    base, ext = os.path.splitext(filename)
-    if ext not in _MARKDOWN_EXTENSIONS:
-        return []
-    return [(x.lower(), x) for x in (y.strip() for y in base.split('~'))]
-
-
+@_log_duration
 def _create_note(title, view):
     """Creates a new note.
 
     Returns the filename of the new note or None if the user canceled or
     there was an error.
     """
-    basename = '{}.{}'.format(title, _setting('markdown_extension', str,
-                                              _DEFAULT_EXTENSION))
-    text = 'Do you want to create {}?'.format(basename)
+    ext = _setting('markdown_extension', str, _DEFAULT_EXTENSION)
+    filename = '{}.{}'.format(title, ext)
+    text = 'Do you want to create {}?'.format(filename)
     if not sublime.ok_cancel_dialog(text, 'Create File'):
         return
-    filename = os.path.join(os.path.dirname(view.file_name()), basename)
+    filename = _full_path(view, filename)
 
-    back_titles = _parse_filename(os.path.basename(view.file_name()))
-    primary_back_title = back_titles[0][1]
+    back_title = next(
+        _titles(os.path.splitext(os.path.basename(view.file_name()))[0]))
+
     try:
         with open(filename, 'w') as fileobj:
-            fileobj.write(_NOTE_TEMPLATE.format(title, primary_back_title))
+            fileobj.write(_NOTE_TEMPLATE.format(title, back_title))
     except IOError as exp:
         sublime.error_message('Could not create {}:\n\n{}'
                               .format(filename, exp))
@@ -345,6 +350,18 @@ def _find_link_regions(view):
                if not view.match_selector(x.begin(), 'markup.raw')]
     _link_regions_cache[view.buffer_id()] = view.change_count(), regions
     return regions
+
+
+def _notes_dir(view):
+    return os.path.dirname(view.file_name())
+
+
+def _full_path(view, filename):
+    return os.path.join(_notes_dir(view), filename)
+
+
+def _titles(name):
+    return (x.strip() for x in name.split(_TITLE_SEP))
 
 
 def _viewing_a_note(view):
@@ -388,6 +405,6 @@ def _log(message):
     sys.stdout.flush()
 
 
-_debug_enabled = False
+_debug_enabled = True
 _notes_cache = {}             # {path: (mtime, notes dict)}
 _link_regions_cache = {}      # {buffer id: (change count, regions)}

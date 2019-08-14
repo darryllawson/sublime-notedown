@@ -19,7 +19,6 @@ def setUpModule():
 def tearDownModule():
     del sys.modules['sublime']
     del sys.modules['sublime_plugin']
-    notedown._parse_filename.cache_clear()
     notedown._debug_enabled = False
     notedown._notes_cache = {}
     notedown._link_regions_cache = {}
@@ -123,12 +122,20 @@ class TestFindingNotes(NotedownTestCase):
                                         'two',
                                         'three',
                                         'alt'})
-        self.assertEqual(set(notes['one']), {('One', self.note_1),
-                                             ('one', self.note_2),
-                                             ('ONE', self.note_3)})
-        self.assertEqual(notes['two'], [('two', self.note_2)])
-        self.assertEqual(notes['three'], [('Three', self.note_3)])
-        self.assertEqual(notes['alt'], [('Alt', self.note_3)])
+        self.assertEqual(
+            set(notes['one']),
+            {('One', os.path.basename(self.note_1)),
+             ('one', os.path.basename(self.note_2)),
+             ('ONE', os.path.basename(self.note_3))})
+        self.assertEqual(
+            notes['two'],
+            [('two', os.path.basename(self.note_2))])
+        self.assertEqual(
+            notes['three'],
+            [('Three', os.path.basename(self.note_3))])
+        self.assertEqual(
+            notes['alt'],
+            [('Alt', os.path.basename(self.note_3))])
 
     def test_cache(self):
         notes = notedown._find_notes(self.view_1)
