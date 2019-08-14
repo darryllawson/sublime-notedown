@@ -35,8 +35,6 @@ A note has one or more titles defined by its file name:
 ```text
 <title>.md
 <title> ~ <title>.md
-<title> ~ <title> ~ <title>.md
-...
 ```
 
 The tilde character (`~`) is used to separate multiple note titles. `<title>` must not contain tilde characters.

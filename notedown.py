@@ -51,14 +51,6 @@ import webbrowser
 import sublime
 import sublime_plugin
 
-_FILENAME_REGEX = re.compile(
-    r'^'
-    r'(.*?)'                             # Primary title
-    r'(?:\s*\((.*)\))?'                  # Alternative titles
-    r'\.(?:md|mdown|markdown|markdn)'    # Extension
-    r'$',
-    flags=re.I)
-
 _MARKDOWN_EXTENSIONS = {'.md', '.mdown', '.markdown', '.markdn'}
 
 _DEFAULT_EXTENSION = 'md'
