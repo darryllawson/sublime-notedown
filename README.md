@@ -18,7 +18,7 @@ Features provided by Notedown:
 
 - **Link to another note** with `[[Note title]]`.
 - **Note title auto-completion.** Type `[[` and you're shown a list of notes you can link to.
-- **Note renaming.** Change the Markdown heading and the note file is automatically renamed to match.
+- **Note renaming.** Change the Markdown heading and the note file is automatically renamed to match and all backlinks are updated.
 - **Open a URL** conforming to the Markdown syntax with the same shortcuts you use for opening a note.
 - **Create a new note** by attempting to open a link to a note that does not exist.
 - **Note link validation.** On save, you'll be shown a list of broken note links.
