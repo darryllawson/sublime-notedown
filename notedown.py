@@ -90,7 +90,8 @@ class _NotedownTextCommand(sublime_plugin.TextCommand):
 class NotedownOpenCommand(_NotedownTextCommand):
 
     def run(self, edit):
-        self._notes = _find_notes(self.view)
+        self._notes = _find_notes_for_view(self.view)
+        _debug_log('num notes: {}'.format(len(self._notes)))
         self._link_regions = _find_link_regions(self.view)
         for selection in self.view.sel():
             if selection.empty():
@@ -141,7 +142,7 @@ class NotedownLintCommand(_NotedownTextCommand):
 
     def run(self, edit):
         self.errors = []  # [(description, region, edit_region)]
-        self._notes = _find_notes(self.view)
+        self._notes = _find_notes_for_view(self.view)
         self._check_note_title()
         self._find_broken_links()
         self._highlight_errors()
@@ -210,8 +211,8 @@ class NotedownEventListener(sublime_plugin.EventListener):
             return
 
         file_name = view.file_name()
-        titles = {y for x in _find_notes(view).values() for y, z in x
-                  if not os.path.samefile(z, file_name)}
+        titles = {y for x in _find_notes_for_view(view).values() for y, z in x
+                  if not os.path.samefile(_full_path(view, z), file_name)}
         return [[x + '\tNote', x + ']]'] for x in sorted(titles)]
 
     def _can_show_completions(self, view, locations):
@@ -227,43 +228,74 @@ class NotedownEventListener(sublime_plugin.EventListener):
 
     def _reflect_title_in_filename(self, view):
         """Returns True if the file was renamed."""
-        title = _note_title(view)
-        if not title:
-            return False
-
-        old_title, ext = os.path.splitext(os.path.basename(view.file_name()))
-        if title == old_title:
-            return False
-
-        new_filename = title + ext
-        text = 'Rename this file to {}?'.format(new_filename)
-        if not sublime.ok_cancel_dialog(text, 'Rename File'):
+        new_name = _note_title(view)
+        if not new_name:
             return False
 
         old_filename = view.file_name()
+        old_name, ext = os.path.splitext(os.path.basename(old_filename))
+        if new_name == old_name:
+            return False
+
+        new_basename = new_name + ext
         new_filename = os.path.join(os.path.dirname(old_filename),
-                                    new_filename)
+                                    new_basename)
+
+        text = 'Rename this file to {}?'.format(new_basename)
+        if not sublime.ok_cancel_dialog(text, 'Rename File'):
+            return False
 
         window = view.window()
+        encoding = view.settings().get('default_encoding', 'utf-8')
+        view.close()
+
         try:
             os.rename(old_filename, new_filename)
         except OSError as exp:
             sublime.error_message('Could not rename {}:\n\n{}'
                                   .format(old_filename, exp))
             return False
-        view.close()
-        window.open_file(new_filename)
 
-        self._update_links(view)
+        window.open_file(new_filename)
+        self._update_backlinks(old_name, new_name, encoding,
+                               notes_dir=os.path.dirname(new_filename))
 
         return True
 
     @_log_duration
-    def _update_links(self, view, old_title, new_title):
-        _find_notes(view)
-        # For each filename, do a regex replacement
-        _titles(old_title)
-        _titles(new_title)
+    def _update_backlinks(self, old_name, new_name, encoding, notes_dir):
+        """
+        Logic:
+            a -> x ~ y    replace a with x
+            a -> a ~ x    do nothing
+            a ~ b -> x    replace a and b with x
+        """
+        removed = set(_titles(old_name)) - set(_titles(new_name))
+        if not removed:
+            return  # Nothing to do
+
+        pattern = re.compile(r'\[\[({})\]\]'.format('|'.join(removed)),
+                             re.IGNORECASE)
+        repl = '[[{}]]'.format(next(_titles(new_name)))
+        _debug_log('updating back links: {} -> {}'.format('|'.join(removed),
+                                                          new_name))
+
+        filenames = {os.path.join(notes_dir, filename)
+                     for l in _find_notes(notes_dir).values()
+                     for _, filename in l}
+        for filename in filenames:
+            with open(filename, encoding=encoding) as fileobj:
+                try:
+                    text, count = pattern.subn(repl, fileobj.read())
+                except UnicodeEncodeError:
+                    _log('{} is not {} encoded'.format(filename, encoding))
+                    continue
+
+            if count:
+                _debug_log('updating {} back link(s) in {}'.format(count,
+                                                                   filename))
+                with open(filename, 'w', encoding=encoding) as fileobj:
+                    fileobj.write(text)
 
 
 def debug(enable=True):
@@ -278,20 +310,23 @@ def _note_title(view):
     return view.substr(view.line(0))[2:].strip()
 
 
+def _find_notes_for_view(view):
+    return _find_notes(os.path.dirname(view.file_name()))
+
+
 @_log_duration
-def _find_notes(view):
-    """Returns a {<lowercase title>: [(<title>, <filename>)]} dictionary
-    representing the notes in the directory containing the file shown in view.
+def _find_notes(directory):
+    """Returns a {<lowercase title>: [(<title>, <filename>)]} dict describing
+    the notes in directory.
 
     Results are cached in _notes_cache.
     """
-    notes_dir = _notes_dir(view)
-    mtime, notes = _notes_cache.get(notes_dir, (None, None))
-    if mtime == os.stat(notes_dir).st_mtime:
+    mtime, notes = _notes_cache.get(directory, (None, None))
+    if mtime == os.stat(directory).st_mtime:
         return notes
 
     notes = {}
-    for name in os.listdir(notes_dir):
+    for name in os.listdir(directory):
         base, ext = os.path.splitext(name)
         if ext not in _MARKDOWN_EXTENSIONS:
             continue
@@ -302,7 +337,7 @@ def _find_notes(view):
             else:
                 notes[lower_title] = [(title, name)]
 
-    _notes_cache[notes_dir] = os.stat(notes_dir).st_mtime, notes
+    _notes_cache[directory] = os.stat(directory).st_mtime, notes
     return notes
 
 

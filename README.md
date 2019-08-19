@@ -63,6 +63,12 @@ link to the same file:
 Foo ~ Bar ~ Goo.md
 ```
 
+Links within *raw* markup are ignored. For example:
+
+```text
+`[[This]] is a not link.`
+```
+
 ## Commands
 
 Notedown provides these Sublime Text commands:

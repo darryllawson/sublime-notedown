@@ -8,6 +8,9 @@
   note filename with the Markdown extension omitted, it must be one of the
   note's titles.
 
+- When a note is renamed (by changing the note's title), all backlinks are
+  automatically updated to match the new name.
+
 - Renamed the "notedown_open_link" command to "notedown_open", because it can
   be used to open something that is not a note.
 
