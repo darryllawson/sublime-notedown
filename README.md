@@ -10,7 +10,7 @@ Notedown fills this gap. It lets you to link to another note with
 [[Note title]]
 ```
 
-Follow a link with **Ctrl + Alt + Left Mouse Button** or by positioning the cursor and pressing **Ctrl + Alt + O** or selecting **Notedown: Open Link** from the command palette.
+Follow a link with **Ctrl + Alt + Left Mouse Button** or by positioning the cursor then pressing **Ctrl + Alt + O** or selecting **Notedown: Open** from the command palette.
 
 ## Features
 
