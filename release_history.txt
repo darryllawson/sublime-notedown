@@ -1,5 +1,5 @@
-1.3.0 - ?
----------
+1.3.0 - 20 August 2019
+----------------------
 
 - Simplified the note filename syntax. Changed from
   "<primary title> (<alternative title>, ...)" to "<title> ~ <title> ~ ...".

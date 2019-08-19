@@ -256,9 +256,14 @@ class NotedownEventListener(sublime_plugin.EventListener):
                                   .format(old_filename, exp))
             return False
 
-        window.open_file(new_filename)
-        self._update_backlinks(old_name, new_name, encoding,
-                               notes_dir=os.path.dirname(new_filename))
+        view = window.open_file(new_filename)
+        while view.is_loading():
+            pass
+
+        updated = self._update_backlinks(old_name, new_name, encoding,
+                                         os.path.dirname(new_filename))
+        view.window().status_message('Updated backlinks to {} note(s)'
+                                     .format(updated))
 
         return True
 
@@ -269,6 +274,9 @@ class NotedownEventListener(sublime_plugin.EventListener):
             a -> x ~ y    replace a with x
             a -> a ~ x    do nothing
             a ~ b -> x    replace a and b with x
+
+        Returns:
+            Count of updated note files.
         """
         removed = set(_titles(old_name)) - set(_titles(new_name))
         if not removed:
@@ -280,6 +288,7 @@ class NotedownEventListener(sublime_plugin.EventListener):
         _debug_log('updating back links: {} -> {}'.format('|'.join(removed),
                                                           new_name))
 
+        updated = 0
         filenames = {os.path.join(notes_dir, filename)
                      for l in _find_notes(notes_dir).values()
                      for _, filename in l}
@@ -292,10 +301,13 @@ class NotedownEventListener(sublime_plugin.EventListener):
                     continue
 
             if count:
-                _debug_log('updating {} back link(s) in {}'.format(count,
-                                                                   filename))
+                updated += 1
+                _debug_log('updating {} back link(s) in {}'
+                           .format(count, filename))
                 with open(filename, 'w', encoding=encoding) as fileobj:
                     fileobj.write(text)
+
+        return updated
 
 
 def debug(enable=True):
@@ -440,6 +452,6 @@ def _log(message):
     sys.stdout.flush()
 
 
-_debug_enabled = True
+_debug_enabled = False
 _notes_cache = {}             # {path: (mtime, notes dict)}
 _link_regions_cache = {}      # {buffer id: (change count, regions)}
