@@ -2,5 +2,9 @@
 	{
         "keys": ["ctrl+alt+o"],
         "command": "notedown_open"
+    },
+    {
+        "keys": ["ctrl+alt+l"],
+        "command": "notedown_link"
     }
 ]

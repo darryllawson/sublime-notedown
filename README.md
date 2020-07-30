@@ -1,6 +1,6 @@
 # Notedown for Sublime Text
 
-Notedown lets you use [Sublime Text](http://sublimetext.com/) for keeping notes stored as [Markdown](https://en.wikipedia.org/wiki/Markdown) files.
+The *Notedown* package helps you use [Sublime Text](http://sublimetext.com/) for keeping notes stored as [Markdown](https://en.wikipedia.org/wiki/Markdown) files.
 
 Sublime Text, with its built-in Markdown support, is pretty good at managing notes. But it lacks one key feature: **linking between notes**.
 
@@ -89,4 +89,3 @@ Notedown supports these settings:
 - **markdown_extension**: The file extension used when creating new notes. This should not include a leading period (`.`). If not defined, `md` is used. Example: `"markdown_extension": "markdown"`.
 
 - **note_folder_patterns**: Defines which folders contain *notes* compatible with Notedown. The folder patterns (which may use wildcards compatible with [fnmatch](https://docs.python.org/3/library/fnmatch.html#fnmatch.fnmatch)) are matched against the name of a Markdown file's containing folder to determine if the file should be considered a note. If not defined or an empty list, then all Markdown files are considered to be notes. Example: `"note_folder_patterns": ["Notes"]`.
-

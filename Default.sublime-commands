@@ -4,6 +4,10 @@
         "command": "notedown_open"
     },
     {
+        "caption": "Notedown: Link",
+        "command": "notedown_link"
+    },
+    {
         "caption": "Notedown: Lint",
         "command": "notedown_lint"
     },

@@ -1,44 +1,4 @@
-"""Sublime Text Notedown plugins
-
-Design philosophy
------------------
-
-- Minimalism, simplicity, and speed.
-- Do nothing that conflicts with the design philosophy of Sublime Text.
-- Orthogonal to Markdown and HTML.
-
-Debugging
----------
-
-Enable debug output from the Sublime Text console with:
-
-    >>> import Notedown
-    >>> Notedown.notedown.debug()
-
-Design decisions
-----------------
-
-Why Markdown? It's popular, provides a "good enough" structure and syntax for
-notes, provides syntax highlighting for improved readability, and it provides
-heading navigation (with Command + R).
-
-Why the [[Note name]] syntax? 1) Avoids conflict with Markdown or HTML syntax,
-2) distinguishable from normal prose, 3) easy to read, and 4) efficient to
-parse. Additionally, this syntax is used in other popular note-taking apps
-such as Notational Velocity and Bear notes.
-
-Why not WikiWord links? 1) You can get false matches with names from code
-and ordinary prose, 2) parsing is less efficient, and 3) auto-completion is
-less useful.
-
-Why tilde (~) to separate note titles? Need a character that does not
-clash with typical note titles (rules out - , .) and can be used on all
-operating systems (rules out |).
-
-Only support a single flat directory of notes because this is simple, fast,
-and requires no configuration. I believe notes should be a flat concept
-anyway. Perhaps tags can be supported one day.
-"""
+"""Sublime Text Notedown"""
 
 import fnmatch
 import os
@@ -68,6 +28,7 @@ See also:
 
 
 def _log_duration(f):
+    """Decorator for logging the duration of a function call."""
     def wrapper(*args, **kwargs):
         started = timeit.default_timer()
         value = f(*args, **kwargs)
@@ -116,13 +77,13 @@ class NotedownOpenCommand(_NotedownTextCommand):
                          for _, x in self._notes[title.lower()]]
         except KeyError:
             filename = _create_note(title, self.view)
-            if filename:  # Not cancelled
+            if filename:  # Not canceled
                 self._open_file(filename)
             return
 
         if len(filenames) > 1:
             def on_done(index):
-                if index != -1:  # Not cancelled
+                if index != -1:  # Not canceled
                     self._open_file(filenames[index])
             self.view.window().show_quick_panel(filenames, on_done)
         else:
@@ -141,35 +102,44 @@ class NotedownOpenCommand(_NotedownTextCommand):
 class NotedownLintCommand(_NotedownTextCommand):
 
     def run(self, edit):
-        self.errors = []  # [(description, region, edit_region)]
-        self._notes = _find_notes_for_view(self.view)
-        self._check_note_title()
-        self._find_broken_links()
-        self._highlight_errors()
-        self._show_error_list()
+        errors = []  # [(description, region, edit_region)]
+        self._check_note_title(errors)
+        self._find_broken_links(errors)
+        self._highlight_errors(errors)
+        self._show_errors_in_quick_panel(errors)
 
-    def _check_note_title(self):
+    def _check_note_title(self, errors):
         if not _note_title(self.view):
-            self.errors.append(
-                ('Invalid note title (must start with #)',
+            errors.append(
+                ('Invalid note title; first line must be a '
+                 'first-level header (start with a single #)',
                  self.view.line(0), sublime.Region(0, 0)))
 
-    def _find_broken_links(self):
+    def _find_broken_links(self, errors):
+        notes = _find_notes_for_view(self.view)
         for region in _find_link_regions(self.view):
             text_region = sublime.Region(region.begin() + len('[['),
                                          region.end() - len(']]'))
-            if self.view.substr(text_region).lower() not in self._notes:
-                self.errors.append(('Missing note file', region, text_region))
+            if self.view.substr(text_region).lower() not in notes:
+                errors.append(('Missing note file', region, text_region))
 
-    def _highlight_errors(self):
-        self.view.add_regions('notedown',
-                              [region for _, region, _ in self.errors],
+    def _highlight_errors(self, errors):
+        self.view.add_regions('notedown', [region for _, region, _ in errors],
                               'invalid.illegal', '', sublime.DRAW_NO_FILL)
 
-    def _show_error_list(self):
+    def _show_errors_in_quick_panel(self, errors):
+        def on_done(index):
+            if index != -1:  # Not canceled
+                self._goto_error(errors[index])
+
         self.view.window().show_quick_panel(
-            [self._format_error(x) for x in self.errors],
-            self._on_error_selected)
+            [self._format_error(x) for x in errors], on_done)
+
+    def _goto_error(self, error):
+        _, region, edit_region = error
+        self.view.sel().clear()
+        self.view.sel().add(edit_region)
+        self.view.show(self.view.sel())
 
     def _format_error(self, error):
         description, region, _ = error
@@ -177,13 +147,42 @@ class NotedownLintCommand(_NotedownTextCommand):
         text = self.view.substr(region)
         return [description, 'Line {}: {}'.format(row + 1, text)]
 
-    def _on_error_selected(self, index):
-        if index == -1:  # Canceled
-            return
-        _, region, edit_region = self.errors[index]
-        self.view.sel().clear()
-        self.view.sel().add(edit_region)
-        self.view.show(self.view.sel())
+
+class NotedownLinkCommand(_NotedownTextCommand):
+    """Command to add a note link at the cusror."""
+
+    def run(self, edit):
+        file_name = self.view.file_name()
+        titles = sorted(y for x in _find_notes_for_view(self.view).values()
+                        for y, z in x
+                        if not os.path.samefile(_full_path(self.view, z),
+                                                file_name))
+
+        def on_done(index):
+            if index != -1:  # Not canceled
+                self.view.run_command('notedown_place_link',
+                                      {'title': titles[index]})
+
+        selected_index = 0
+        first_sel = self.view.substr(self.view.sel()[0]).lower()
+        for index, title in enumerate(titles):
+            if title.lower().startswith(first_sel):
+                selected_index = index
+                break
+
+        self.view.window().show_quick_panel(titles, on_done, 0, selected_index)
+
+
+class NotedownPlaceLinkCommand(_NotedownTextCommand):
+
+    def run(self, edit, title):
+        selection = self.view.sel()
+        text = '[[{}]]'.format(title)
+        for region in selection:
+            self.view.replace(edit, region, text)
+        regions = [sublime.Region(r.end(), r.end()) for r in selection]
+        selection.clear()
+        selection.add_all(regions)
 
 
 class NotedownEventListener(sublime_plugin.EventListener):
@@ -202,29 +201,6 @@ class NotedownEventListener(sublime_plugin.EventListener):
         renamed = self._reflect_title_in_filename(view)
         if not renamed:
             view.run_command('notedown_lint')
-
-    def on_query_completions(self, view, prefix, locations):
-        if not _viewing_a_note(view):
-            return False
-
-        if not self._can_show_completions(view, locations):
-            return
-
-        file_name = view.file_name()
-        titles = {y for x in _find_notes_for_view(view).values() for y, z in x
-                  if not os.path.samefile(_full_path(view, z), file_name)}
-        return [[x + '\tNote', x + ']]'] for x in sorted(titles)]
-
-    def _can_show_completions(self, view, locations):
-        # Show completions if not in raw scope and [[ has been typed.
-        point = locations[0]
-        if view.match_selector(point, 'markup.raw'):
-            return False
-        pre_text = view.substr(sublime.Region(view.line(point).begin(),
-                                              point))
-        if not re.match(r'.*\[\[(.*?)(?!\]\])', pre_text):
-            return False
-        return True
 
     def _reflect_title_in_filename(self, view):
         """Returns True if the file was renamed."""
@@ -357,13 +333,13 @@ def _find_notes(directory):
 def _create_note(title, view):
     """Creates a new note.
 
-    Returns the filename of the new note or None if the user canceled or
+    Returns the filename of the new note, or None if the user canceled or
     there was an error.
     """
     ext = _setting('markdown_extension', str, _DEFAULT_EXTENSION)
     filename = '{}.{}'.format(title, ext)
-    text = 'Do you want to create {}?'.format(filename)
-    if not sublime.ok_cancel_dialog(text, 'Create File'):
+    text = 'Create a new note "{}"?'.format(filename)
+    if not sublime.ok_cancel_dialog(text, 'Create Note'):
         return
     filename = _full_path(view, filename)
 
