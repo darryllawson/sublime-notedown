@@ -198,7 +198,11 @@ class NotedownEventListener(sublime_plugin.EventListener):
         if not _viewing_a_note(view):
             return
 
-        renamed = self._reflect_title_in_filename(view)
+        reflect_title_in_filename = _setting('reflect_title_in_filename', bool)
+        renamed = False
+        if reflect_title_in_filename:
+            renamed = self._reflect_title_in_filename(view)
+
         if not renamed:
             view.run_command('notedown_lint')
 
